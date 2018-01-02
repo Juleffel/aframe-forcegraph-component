@@ -209,10 +209,6 @@ AFRAME.registerComponent('forcegraph', {
 
       el3d.add(link.__line = line);
     });
-    console.log("Line materials");
-    console.log(lineMaterials);
-    console.log("Links");
-    console.log(elData.links);
 
     // Feed data to force-directed layout
     var isD3Sim = elData.forceEngine !== 'ngraph',
