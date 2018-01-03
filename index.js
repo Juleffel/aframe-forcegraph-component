@@ -38,6 +38,7 @@ AFRAME.registerComponent('forcegraph', {
     numDimensions: {type: 'number', default: 3},
     nodeRelSize: {type: 'number', default: 4}, // volume per val unit
     nodeResolution: {type: 'number', default: 8}, // how many slice segments in the sphere's circumference
+    linkResolution: {type: 'number', default: 6}, // how many radial segments in the cylinder
     lineOpacity: {type: 'number', default: 0.2},
     defaultLineWidth: {type: 'number', default: 1}, // Line width is multiplied by link val field
     autoColorBy: {parse: parseAccessor, default: ''}, // color nodes with the same field equally
@@ -186,28 +187,29 @@ AFRAME.registerComponent('forcegraph', {
     var linkNameAccessor = accessorFn(elData.linkNameField);
     var linkColorAccessor = accessorFn(elData.linkColorField);
     var linkValAccessor = accessorFn(elData.linkValField);
-    var lineMaterials = {}; // indexed by color
+    var cylinderMaterials = {}; // indexed by color
+    var cylinderGeometries = {}; // indexed by color
     elData.links.forEach(function(link) {
-      var color = linkColorAccessor(link) || '#f0f0f0';
+      var color = linkColorAccessor(link);
       var val = Math.round(linkValAccessor(link)) || 1;
-      var materialName = color+"-"+val;
-      if (!lineMaterials.hasOwnProperty(materialName)) {
-        lineMaterials[materialName] = new THREE.LineBasicMaterial({
-          color: colorStr2Hex(color),
+      var d = val * elData.defaultLineWidth / 8;
+      if (!cylinderGeometries.hasOwnProperty(val)) {
+        cylinderGeometries[val] = new THREE.CylinderGeometry(d, d, 1, elData.linkResolution);
+        cylinderGeometries[val].applyMatrix( new THREE.Matrix4().makeTranslation( 0, 1 / 2, 0 ) );
+        cylinderGeometries[val].applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+      }
+      if (!cylinderMaterials.hasOwnProperty(color)) {
+        cylinderMaterials[color] = new THREE.MeshLambertMaterial({
+          color: colorStr2Hex(color || '#f0f0f0'),
           transparent: true,
-          linewidth: elData.defaultLineWidth * val,
           opacity: elData.lineOpacity
         });
       }
+      var cylinder = new THREE.Mesh( cylinderGeometries[val], cylinderMaterials[color] );
 
-      var geometry = new THREE.BufferGeometry();
-      geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3));
-      var lineMaterial = lineMaterials[materialName];
-      var line = new THREE.Line(geometry, lineMaterial);
+      cylinder.name = linkNameAccessor(link); // Add link label
 
-      line.name = linkNameAccessor(link); // Add link label
-
-      el3d.add(link.__line = line);
+      el3d.add(link.__cylinder = cylinder);
     });
 
     // Feed data to force-directed layout
@@ -268,23 +270,21 @@ AFRAME.registerComponent('forcegraph', {
 
       //Update links position
       elData.links.forEach(function(link) {
-        var line = link.__line,
+        var cylinder = link.__cylinder,
             pos = isD3Sim
                 ? link
                 : layout.getLinkPosition(layout.graph.getLink(link.source, link.target).id),
             start = pos[isD3Sim ? 'source' : 'from'],
             end = pos[isD3Sim ? 'target' : 'to'],
-            linePos = line.geometry.attributes.position;
+            vstart = new THREE.Vector3(start.x,start.y,start.z),
+            vend = new THREE.Vector3(end.x,end.y,end.z),
+            distance = vstart.distanceTo(vend );
 
-        linePos.array[0] = start.x;
-        linePos.array[1] = start.y || 0;
-        linePos.array[2] = start.z || 0;
-        linePos.array[3] = end.x;
-        linePos.array[4] = end.y || 0;
-        linePos.array[5] = end.z || 0;
-
-        linePos.needsUpdate = true;
-        line.geometry.computeBoundingSphere();
+        cylinder.position.x = vstart.x;
+        cylinder.position.y = vstart.y;
+        cylinder.position.z = vstart.z;
+        cylinder.lookAt(vend);
+        cylinder.scale.z = distance;
       });
     }
 
@@ -323,11 +323,7 @@ AFRAME.registerComponent('forcegraph', {
     );
 
     var intersects = centerRaycaster.intersectObjects(this.el.object3D.children)
-        .filter(function(o) { return o.object.name }) // Check only objects with labels
-        .sort(function(a, b) {                        // Prioritize meshes over lines
-            return isMesh(b) - isMesh(a);
-            function isMesh(o) { return o.object.type === 'Mesh'; }
-        });
+        .filter(function(o) { return o.object.name }); // Check only objects with labels
 
     this.state.tooltipEl.setAttribute('value', intersects.length ? intersects[0].object.name : '' );
     this.state.subTooltipEl.setAttribute('value', intersects.length ? intersects[0].object.desc || '' : '' );

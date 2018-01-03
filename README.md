@@ -24,6 +24,7 @@ See also the [standalone VR component version](https://github.com/vasturiano/3d-
 | num-dimensions      | Number of dimensions to run the force simulation on (1, 2 or 3).                                                           | 3             |
 | node-rel-size       | Node sphere volume per val unit.                                                                                           | 4             |
 | node-resolution     | Geometric resolution of each node, expressed in how many slice segments to divide the circumference. Higher values yield smoother spheres. | 8 |
+| link-resolution     | Geometric resolution of each link, expressed in how many radial segments have the cylinder. Higher values yield smoother cylinders. | 6 |
 | line-opacity        | Opacity of links.                                                                                                          | 0.2           |
 | default-line-width  | Default link line width (Warning: Doesn't work on Windows platform with WebGL renderer) | 1             |
 | auto-color-by       | Node object accessor function (`fn(node)`) or attribute (e.g. `'type'`) to automatically group colors by. Only affects nodes without a color attribute. |               |
