@@ -50,6 +50,9 @@ AFRAME.registerComponent('forcegraph', {
     linkColor: {parse: parseAccessor, default: 'color'},
     linkAutoColorBy: {parse: parseAccessor, default: ''}, // color links with the same field equally
     linkOpacity: {type: 'number', default: 0.2},
+    linkVal: {parse: parseAccessor, default: 'val'}, // Rounded to nearest integer and multiplied by linkDefaultWidth
+    linkDefaultWidth: {type: 'number', default: 1.0},
+    linkResolution: {type: 'number', default: 6},
     forceEngine: {type: 'string', default: 'd3'}, // 'd3' or 'ngraph'
     d3AlphaDecay: {type: 'number', default: 0.0228},
     d3VelocityDecay: {type: 'number', default: 0.4},
@@ -140,6 +143,9 @@ AFRAME.registerComponent('forcegraph', {
       'linkColor',
       'linkAutoColorBy',
       'linkOpacity',
+      'linkVal',
+      'linkDefaultWidth',
+      'linkResolution',
       'forceEngine',
       'd3AlphaDecay',
       'd3VelocityDecay',
