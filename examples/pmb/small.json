@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {"id": 1, "name": "U76DD80", "desc": "First protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 2, "name": "UHDEI8D", "desc": "Second protein desctiption: [Base AAA]"},
+    {"id": 3, "name": "DEHDIUH", "desc": "Third protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 4, "name": "D7EY8HI", "desc": "Fourth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 5, "name": "LJD89H9", "desc": "Fifth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 6, "name": "D8HH8920", "desc": "Sixth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 7, "name": "PAE039X8", "desc": "Seventh protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 8, "name": "O2UDH9J", "desc": "Eighth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 9, "name": "D0IJ", "desc": "Ninth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 10, "name": "0SLDSMFJ", "desc": "Tenth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 11, "name": "CNX930", "desc": "Eleventh protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 12, "name": "SXDD97C5", "desc": "Twelfth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 13, "name": "SL192DZ", "desc": "Thirteenth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 14, "name": "S029S8C-LSjdoi89", "desc": "Fourteenth protein desctiption: [Base 1 ; Base 2]"},
+    {"id": 15, "name": "DSDJI", "desc": "Fifteenth protein desctiption: [Base 1 ; Base 2]"}
+  ],
+  "links": [
+    {"source": 1, "target": 1, "group": 1, "name": "A1", "desc": "Desc1"},
+    {"source": 1, "target": 2, "group": 1, "name": "A1", "desc": "Desc2"},
+    {"source": 1, "target": 3, "group": 1, "name": "A1", "desc": "Desc3"},
+    {"source": 1, "target": 4, "group": 2, "name": "A2", "desc": "Desc4"},
+    {"source": 1, "target": 5, "group": 2, "name": "A2", "desc": "Desc5"},
+    {"source": 3, "target": 2, "group": 2, "name": "A2", "desc": "Desc6"},
+    {"source": 3, "target": 6, "group": 2, "name": "A2", "desc": "Desc7"},
+    {"source": 4, "target": 5, "group": 3, "name": "A3"},
+    {"source": 6, "target": 8, "group": 3, "name": "A3"},
+    {"source": 6, "target": 9, "group": 3, "name": "A3"},
+    {"source": 6, "target": 6, "group": 5, "name": "A5"},
+    {"source": 6, "target": 10, "group": 5, "name": "A5"},
+    {"source": 7, "target": 8, "group": 5, "name": "A5"},
+    {"source": 7, "target": 11, "group": 6, "name": "A6"},
+    {"source": 11, "target": 12, "group": 6, "name": "A6"},
+    {"source": 11, "target": 13, "group": 6, "name": "A6"},
+    {"source": 12, "target": 13}
+  ]
+}

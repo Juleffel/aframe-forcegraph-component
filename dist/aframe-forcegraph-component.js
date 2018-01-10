@@ -97,6 +97,9 @@
 	    linkColor: {parse: parseAccessor, default: 'color'},
 	    linkAutoColorBy: {parse: parseAccessor, default: ''}, // color links with the same field equally
 	    linkOpacity: {type: 'number', default: 0.2},
+	    linkVal: {parse: parseAccessor, default: 'val'}, // Rounded to nearest integer and multiplied by linkDefaultWidth
+	    linkDefaultWidth: {type: 'number', default: 1.0},
+	    linkResolution: {type: 'number', default: 6},
 	    forceEngine: {type: 'string', default: 'd3'}, // 'd3' or 'ngraph'
 	    d3AlphaDecay: {type: 'number', default: 0.0228},
 	    d3VelocityDecay: {type: 'number', default: 0.4},
@@ -188,6 +191,9 @@
 	      'linkColor',
 	      'linkAutoColorBy',
 	      'linkOpacity',
+	      'linkVal',
+	      'linkDefaultWidth',
+	      'linkResolution',
 	      'forceEngine',
 	      'd3AlphaDecay',
 	      'd3VelocityDecay',
@@ -261,9 +267,9 @@
 	var forcelayout3d = _interopDefault(__webpack_require__(29));
 	var Kapsule = _interopDefault(__webpack_require__(52));
 	var qwest = _interopDefault(__webpack_require__(53));
-	var accessorFn = _interopDefault(__webpack_require__(1));
-	var d3ScaleChromatic = __webpack_require__(59);
-	var tinyColor = _interopDefault(__webpack_require__(62));
+	var accessorFn = _interopDefault(__webpack_require__(59));
+	var d3ScaleChromatic = __webpack_require__(60);
+	var tinyColor = _interopDefault(__webpack_require__(63));
 
 	var colorStr2Hex = function colorStr2Hex(str) {
 	  return isNaN(str) ? parseInt(tinyColor(str).toHex(), 16) : str;
@@ -301,8 +307,8 @@
 	  BufferAttribute: three.BufferAttribute,
 	  Mesh: three.Mesh,
 	  MeshLambertMaterial: three.MeshLambertMaterial,
-	  Line: three.Line,
-	  LineBasicMaterial: three.LineBasicMaterial
+	  Line: Line,
+	  LineBasicMaterial: LineBasicMaterial
 	};
 
 	var ngraph = { graph: graph, forcelayout: forcelayout, forcelayout3d: forcelayout3d };
@@ -354,6 +360,9 @@
 	    linkColor: { default: 'color' },
 	    linkAutoColorBy: {},
 	    linkOpacity: { default: 0.2 },
+	    linkVal: { default: 'val' }, // Rounded to nearest integer and multiplied by linkDefaultWidth
+	    linkDefaultWidth: { default: 1 },
+	    linkResolution: { default: 6 }, // how many radial segments in the cylinder geometry
 	    forceEngine: { default: 'd3' }, // d3 or ngraph
 	    d3AlphaDecay: { default: 0.0228 },
 	    d3VelocityDecay: { default: 0.4 },
@@ -468,21 +477,27 @@
 	    });
 
 	    var linkColorAccessor = accessorFn(state.linkColor);
-	    var lineMaterials = {}; // indexed by color
+	    var linkValAccessor = accessorFn(state.linkVal);
+	    var cylinderGeometries = {}; // indexed by val
+	    var cylinderMaterials = {}; // indexed by color
 	    state.graphData.links.forEach(function (link) {
 	      var color = linkColorAccessor(link);
-	      if (!lineMaterials.hasOwnProperty(color)) {
-	        lineMaterials[color] = new three$1.LineBasicMaterial({
+	      var val = linkValAccessor(link) || 1;
+	      var d = val * state.linkDefaultWidth / 2;
+	      if (!cylinderGeometries.hasOwnProperty(val)) {
+	        cylinderGeometries[val] = new THREE.CylinderGeometry(d, d, 1, state.linkResolution);
+	        cylinderGeometries[val].applyMatrix(new THREE.Matrix4().makeTranslation(0, 1 / 2, 0));
+	        cylinderGeometries[val].applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+	      }
+	      if (!cylinderMaterials.hasOwnProperty(color)) {
+	        cylinderMaterials[color] = new THREE.MeshLambertMaterial({
 	          color: colorStr2Hex(color || '#f0f0f0'),
 	          transparent: true,
 	          opacity: state.linkOpacity
 	        });
 	      }
 
-	      var geometry = new three$1.BufferGeometry();
-	      geometry.addAttribute('position', new three$1.BufferAttribute(new Float32Array(2 * 3), 3));
-	      var lineMaterial = lineMaterials[color];
-	      var line = new three$1.Line(geometry, lineMaterial);
+	      var line = new THREE.Mesh(cylinderGeometries[val], cylinderMaterials[color]);
 
 	      line.renderOrder = 10; // Prevent visual glitches of dark lines on top of nodes by rendering them last
 
@@ -552,17 +567,15 @@
 	        var pos = isD3Sim ? link : layout.getLinkPosition(layout.graph.getLink(link.source, link.target).id),
 	            start = pos[isD3Sim ? 'source' : 'from'],
 	            end = pos[isD3Sim ? 'target' : 'to'],
-	            linePos = line.geometry.attributes.position;
+	            vstart = new THREE.Vector3(start.x, start.y || 0, start.z || 0),
+	            vend = new THREE.Vector3(end.x, end.y || 0, end.z || 0),
+	            distance = vstart.distanceTo(vend);
 
-	        linePos.array[0] = start.x;
-	        linePos.array[1] = start.y || 0;
-	        linePos.array[2] = start.z || 0;
-	        linePos.array[3] = end.x;
-	        linePos.array[4] = end.y || 0;
-	        linePos.array[5] = end.z || 0;
-
-	        linePos.needsUpdate = true;
-	        line.geometry.computeBoundingSphere();
+	        line.position.x = vstart.x;
+	        line.position.y = vstart.y;
+	        line.position.z = vstart.z;
+	        line.lookAt(vend);
+	        line.scale.z = distance;
 	      });
 	    }
 	  }
@@ -8885,9 +8898,15 @@
 /* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	!function(e,t){ true?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.accessorFn=t():e.accessorFn=t()}(this,function(){return function(e){function t(o){if(n[o])return n[o].exports;var r=n[o]={i:o,l:!1,exports:{}};return e[o].call(r.exports,r,r.exports,t),r.l=!0,r.exports}var n={};return t.m=e,t.c=n,t.d=function(e,n,o){t.o(e,n)||Object.defineProperty(e,n,{configurable:!1,enumerable:!0,get:o})},t.n=function(e){var n=e&&e.__esModule?function(){return e.default}:function(){return e};return t.d(n,"a",n),n},t.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},t.p="",t(t.s=0)}([function(e,t,n){var o,r,u;!function(n,c){r=[e,t],void 0!==(u="function"==typeof(o=c)?o.apply(t,r):o)&&(e.exports=u)}(0,function(e,t){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.default=function(e){return e instanceof Function?e:"string"==typeof e?function(t){return t[e]}:function(t){return e}},e.exports=t.default})}])});
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
 	// https://d3js.org/d3-scale-chromatic/ Version 1.1.1. Copyright 2017 Mike Bostock.
 	(function (global, factory) {
-		 true ? factory(exports, __webpack_require__(60)) :
+		 true ? factory(exports, __webpack_require__(61)) :
 		typeof define === 'function' && define.amd ? define(['exports', 'd3-interpolate'], factory) :
 		(factory((global.d3 = global.d3 || {}),global.d3));
 	}(this, (function (exports,d3Interpolate) { 'use strict';
@@ -9329,12 +9348,12 @@
 
 
 /***/ }),
-/* 60 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://d3js.org/d3-interpolate/ Version 1.1.6. Copyright 2017 Mike Bostock.
 	(function (global, factory) {
-		 true ? factory(exports, __webpack_require__(61)) :
+		 true ? factory(exports, __webpack_require__(62)) :
 		typeof define === 'function' && define.amd ? define(['exports', 'd3-color'], factory) :
 		(factory((global.d3 = global.d3 || {}),global.d3));
 	}(this, (function (exports,d3Color) { 'use strict';
@@ -9880,7 +9899,7 @@
 
 
 /***/ }),
-/* 61 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://d3js.org/d3-color/ Version 1.0.3. Copyright 2017 Mike Bostock.
@@ -10409,7 +10428,7 @@
 
 
 /***/ }),
-/* 62 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;// TinyColor v1.4.1
